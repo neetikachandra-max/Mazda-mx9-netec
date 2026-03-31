@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>LEGO MOC AR Studio</title>
+    
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.class"></script>
+
+    <style>
+        :root {
+            --neon: #00f2ff;
+            --bg: #050505;
+            --gpu: translate3d(0,0,0);
+        }
+
+        body {
+            background-color: var(--bg);
+            color: white;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: -apple-system, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        /* 1. INTERACTIVE & UPLOAD BOX */
+        .interactive-stage {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid #333;
+            border-radius: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 50px rgba(0,0,0,1);
+            /* Important for GPU handle */
+            transform: var(--gpu);
+            transition: transform 0.1s ease;
+            cursor: pointer;
+        }
+
+        /* The uploaded image */
+        #preview-image {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 20px;
+            display: none;
+            object-fit: contain;
+        }
+
+        /* Upload Label */
+        .upload-label {
+            color: #666;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+
+        /* Glow effect on hover/active */
+        .is-active {
+            border-color: var(--neon);
+            box-shadow: 0 0 25px rgba(0, 242, 255, 0.3);
+        }
+
+        /* 2. UI PANEL */
+        .ui-panel {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 280px;
+        }
+
+        .btn {
+            padding: 16px;
+            border-radius: 15px;
+            border: none;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .btn:active { transform: scale(0.95); }
+
+        .btn-upload { background: #333; color: white; }
+
+        /* AR Trigger (using Apple Quick Look) */
+        .btn-ar { 
+            background: var(--neon); 
+            color: black; 
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.5);
+            display: none; /* Hidden until car is uploaded */
+        }
+
+        /* Hidden Input */
+        #file-input { display: none; }
+
+    </style>
+</head>
+<body>
+
+    <div id="stage" class="interactive-stage">
+        
+        <label for="file-input" class="upload-label" id="label">
+            <span style="font-size: 3rem; color:var(--neon)">+</span><br><br>Tap to add your Lego MOC
+        </label>
+        
+        <img id="preview-image" src="" alt="Lego Car">
+        
+    </div>
+
+    <div class="ui-panel">
+        <input type="file" id="file-input" accept="image/*">
+        
+        <a id="ar-link" 
+           rel="ar" 
+           href="https://developer.apple.com/augmented-reality/quick-look/models/car/car.usdz" 
+           class="btn btn-ar">
+            VIEW IN YOUR ROOM
+        </a>
+
+        <button class="btn btn-upload" onclick="document.getElementById('file-input').click()">
+            NEW PHOTO
+        </button>
+    </div>
+
+    <script>
+        const input = document.getElementById('file-input');
+        const img = document.getElementById('preview-image');
+        const label = document.getElementById('label');
+        const stage = document.getElementById('stage');
+        const arBtn = document.getElementById('ar-link');
+
+        // HANDLE 1: Image Upload (Client-Side, No Lag)
+        input.onchange = () => {
+            const [file] = input.files;
+            if (file) {
+                // Creates a local memory "handle" for the image
+                img.src = URL.createObjectURL(file);
+                img.style.display = 'block';
+                label.style.display = 'none';
+                arBtn.style.display = 'block'; // Show AR button now
+                stage.classList.add('is-active');
+            }
+        };
+
+        // HANDLE 2: Interactivity (A13/A14 Tilt)
+        // Uses mouse/touch coordinates to rotate the "stage" in 3D
+        document.addEventListener('mousemove', (e) => {
+            // Check if user is actually uploading/clicking before tilting
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 10;
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 10;
+            stage.style.transform = `rotateY(${xAxis}deg) rotateX(${-yAxis}deg)`;
+        });
+
+        // Reset tilt on touch/mouse leave
+        document.addEventListener('touchend', () => stage.style.transform = `rotateY(0) rotateX(0)`);
+        document.addEventListener('mouseleave', () => stage.style.transform = `rotateY(0) rotateX(0)`);
+
+    </script>
+</body>
+</html>
